@@ -2,3 +2,6 @@ opensearch-py
 transformers
 torch
 sentence-transformers
+fastapi 
+uvicorn 
+pydantic
