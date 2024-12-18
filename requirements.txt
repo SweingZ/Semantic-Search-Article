@@ -1,0 +1,4 @@
+opensearch-py
+transformers
+torch
+sentence-transformers
