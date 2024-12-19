@@ -1,3 +1,4 @@
+from random import sample
 from typing import List
 from fastapi import FastAPI, HTTPException
 from opensearch_client import INDEX_NAME, connect_to_opensearch, index_articles, create_index
@@ -47,3 +48,95 @@ async def semantic_search(request: SearchRequest):
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during search: {str(e)}")
+    
+@app.get("/random-articles", response_model=List[ArticleResponse])
+async def get_random_articles():
+    try:
+        search_body = {
+            "size": 1000,  # Fetch a large number of documents to sample from
+            "query": {
+                "match_all": {}
+            }
+        }
+        response = client.search(index=INDEX_NAME, body=search_body)
+        
+        # Sample 6 random articles
+        total_articles = response["hits"]["hits"]
+        if len(total_articles) < 6:
+            raise HTTPException(status_code=404, detail="Not enough articles to fetch 6 random ones.")
+        
+        random_articles = sample(total_articles, 6)
+        
+        results = []
+        for hit in random_articles:
+            result = ArticleResponse(
+                title=hit["_source"]["title"],
+                content=hit["_source"]["content"],
+                author=hit["_source"]["author"],
+                published_date=hit["_source"]["published_date"],
+                score=hit["_score"]
+            )
+            results.append(result)
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching random articles: {str(e)}")
+    
+@app.get("/recommend-articles", response_model=List[ArticleResponse])
+async def recommend_articles_by_title(title: str):
+    try:
+        # Step 1: Fetch the article by title
+        search_body = {
+            "query": {
+                "match": {
+                    "title": title
+                }
+            }
+        }
+        response = client.search(index=INDEX_NAME, body=search_body)
+        
+        if not response["hits"]["hits"]:
+            raise HTTPException(status_code=404, detail="Article not found.")
+        
+        # Get the ID and embedding of the matched article
+        original_article = response["hits"]["hits"][0]
+        article_id = original_article["_id"]
+        article_embedding = original_article["_source"]["embedding"]
+
+        # Step 2: Use the embedding to find the next 3 closest articles, excluding the original one
+        recommendation_body = {
+            "size": 4,  
+            "query": {
+                "bool": {
+                    "must": {
+                        "knn": {
+                            "embedding": {
+                                "vector": article_embedding,
+                                "k": 4  
+                            }
+                        }
+                    },
+                    "must_not": {
+                        "term": {
+                            "_id": article_id  
+                        }
+                    }
+                }
+            }
+        }
+        rec_response = client.search(index=INDEX_NAME, body=recommendation_body)
+
+        # Step 3: Extract the results
+        results = []
+        for hit in rec_response["hits"]["hits"][:3]:  # Only return the next 3 closest
+            result = ArticleResponse(
+                title=hit["_source"]["title"],
+                content=hit["_source"]["content"],
+                author=hit["_source"]["author"],
+                published_date=hit["_source"]["published_date"],
+                score=hit["_score"]
+            )
+            results.append(result)
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error during recommendation: {str(e)}")
+
