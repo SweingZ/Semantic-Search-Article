@@ -39,6 +39,8 @@ async def semantic_search(request: SearchRequest):
             result = ArticleResponse(
                 title=hit["_source"]["title"],
                 content=hit["_source"]["content"],
+                author=hit["_source"]["author"],
+                published_date=hit["_source"]["published_date"],
                 score=hit["_score"]
             )
             results.append(result)

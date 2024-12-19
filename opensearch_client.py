@@ -30,6 +30,8 @@ def create_index(client):
             "properties": {
                 "title": {"type": "text"},
                 "content": {"type": "text"},
+                "author" : {"type": "text"},
+                "published_date" : {"type": "text"},
                 "embedding": {
                     "type": "knn_vector",
                     "dimension": 384  
@@ -46,6 +48,9 @@ def index_articles(client, articles):
         doc = {
             "title": article['title'],
             "content": article['content'],
+            "author": article['author'],
+            "published_date": article['published_date'],
             "embedding": article['embedding']
         }
         client.index(index=INDEX_NAME, body=doc)
+

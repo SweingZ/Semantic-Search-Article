@@ -11,4 +11,6 @@ class SearchRequest(BaseModel):
 class ArticleResponse(BaseModel):
     title: str
     content: str
+    author: str
+    published_date: str
     score: float
