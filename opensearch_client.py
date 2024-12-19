@@ -9,6 +9,7 @@ def connect_to_opensearch():
         verify_certs=False
     )
     if client.ping():
+        print("Connected to Opensearch")
         return client
     else:
         raise ConnectionError("Failed to connect to OpenSearch.")

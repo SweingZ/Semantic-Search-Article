@@ -7,7 +7,6 @@ from models import SearchRequest, ArticleResponse
 
 app = FastAPI()
 
-# Initialize OpenSearch client and model
 client = connect_to_opensearch()
 model = load_model()
 create_index(client)
