@@ -2,7 +2,7 @@ from sentence_transformers import SentenceTransformer
 
 def create_embeddings(articles, model):
     for article in articles:
-        text = f"{article['title']} {article['content']} {article['author']} {article['published_date']}"
+        text = f"{article['title']} {article['content']} "
         article['embedding'] = model.encode(text).tolist()
     return articles
 

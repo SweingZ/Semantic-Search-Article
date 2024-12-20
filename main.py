@@ -1,6 +1,7 @@
 from random import sample
 from typing import List
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from opensearch_client import INDEX_NAME, connect_to_opensearch, index_articles, create_index
 from embeddings import load_model, create_embeddings
 from articles import load_articles_from_json
@@ -16,6 +17,15 @@ create_index(client)
 articles = load_articles_from_json("dummy_articles.json")
 articles_with_embeddings = create_embeddings(articles, model)
 index_articles(client, articles_with_embeddings)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 
 @app.post("/search", response_model=List[ArticleResponse])
@@ -62,10 +72,10 @@ async def get_random_articles():
         
         # Sample 6 random articles
         total_articles = response["hits"]["hits"]
-        if len(total_articles) < 6:
-            raise HTTPException(status_code=404, detail="Not enough articles to fetch 6 random ones.")
+        if len(total_articles) < 9:
+            raise HTTPException(status_code=404, detail="Not enough articles to fetch 9 random ones.")
         
-        random_articles = sample(total_articles, 6)
+        random_articles = sample(total_articles, 9)
         
         results = []
         for hit in random_articles:
