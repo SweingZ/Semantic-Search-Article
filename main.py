@@ -28,7 +28,7 @@ app.add_middleware(
 )
 
 
-@app.post("/search", response_model=List[ArticleResponse])
+@app.post("/good-search", response_model=List[ArticleResponse])
 async def semantic_search(request: SearchRequest):
     try:
         query_embedding = model.encode(request.query).tolist()
@@ -58,6 +58,35 @@ async def semantic_search(request: SearchRequest):
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during search: {str(e)}")
+
+@app.post("/bad-search", response_model=List[ArticleResponse])
+async def bad_search(request: SearchRequest):
+    try:
+        search_body = {
+            "size": 3, 
+            "query": {
+                "match": {
+                    "content": request.query
+                }
+            }
+        }
+        response = client.search(index=INDEX_NAME, body=search_body)
+
+        results = []
+        for hit in response["hits"]["hits"]:
+            result = ArticleResponse(
+                title=hit["_source"]["title"],
+                content=hit["_source"]["content"],
+                author=hit["_source"]["author"],
+                published_date=hit["_source"]["published_date"],
+                score=hit["_score"]
+            )
+            results.append(result)
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error during bad search: {str(e)}")
+
+
     
 @app.get("/random-articles", response_model=List[ArticleResponse])
 async def get_random_articles():
